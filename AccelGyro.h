@@ -2,9 +2,9 @@
 #define ACCELGYRO_H
 
 #include <cstdint>
+#include <I2C.h>
 #include "Config.h"
 #include "Vector.h"
-#include "I2C.h"
 
 class AccelGyro {
 private:

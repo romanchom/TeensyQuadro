@@ -1,16 +1,16 @@
-#include "Debug.h"
+#include <Yanrf.h>
 
+#include "Debug.h"
 #include "Vector.h"
 
 #include "MotorController.h"
-#include <nrf24l01.h>
 
 enum {
   ledPin = 13,
 };
 
 MotorController motoCtrl;
-RadioNRF radio;
+Yanrf radio;
 
 
 void blink(){

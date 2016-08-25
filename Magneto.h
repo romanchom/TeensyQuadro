@@ -2,9 +2,9 @@
 #define MAGNETO_H
 
 #include <cstdint>
+#include <I2C.h>
 #include "Vector.h"
 #include "Config.h"
-#include "I2C.h"
 
 class Magneto {
 private:
