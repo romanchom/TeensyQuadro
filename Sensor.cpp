@@ -4,7 +4,7 @@
 
 #include "Debug.h"
 
-static const float MAX_COMPASS_DIFFERENCE_ANGLE = 5.0 * (M_PI / 180.0);
+static const float MAX_COMPASS_DIFFERENCE_ANGLE = 0.0 * (M_PI / 180.0);
 
 void Sensor::init(){
 	I2C::init();
@@ -43,6 +43,7 @@ void Sensor::read(){
 		angle = acos(angle);
 		if(angle > MAX_COMPASS_DIFFERENCE_ANGLE){
 			angle -= MAX_COMPASS_DIFFERENCE_ANGLE;
+			angle *= 0.02f;
 
 			Quaternion attFix;
 			attFix.fromAngleAxis(angle, axis);
@@ -55,7 +56,7 @@ void Sensor::read(){
 		Serial.println();
 
 		Serial.print("Mag\t");
-		northAsRead.print();
+		magneto.magneto.print();
 		Serial.println();
 
 		Serial.print("Acc\t");

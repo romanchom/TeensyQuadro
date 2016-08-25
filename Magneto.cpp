@@ -17,14 +17,14 @@ enum {
 	REG_M_SELF_TEST = 0x0C,
 };
 
-
-// I have no idea where I got this numbers from
-static const Vector<3> magCal0(-0.109937, 0.204617, 0.059061);
+// I got those numbers from an app called Magneto, see
+// https://sites.google.com/site/sailboatinstruments1/home
+static const Vector<3> magCal0(91.542023, 31.508121, -10.970412);
 
 // callibrate, swap x and y, negate z
-static const Vector<3> magCal1(0.021530, 1.957276, -0.003436);
-static const Vector<3> magCal2(1.877764, 0.021530, 0.024950);
-static const Vector<3> magCal3(-0.024950, 0.003436, -1.976183);
+static const Vector<3> magCalX(0.006659, 0.000091, -0.000026);
+static const Vector<3> magCalY(0.000091, 0.007014, -0.000061);
+static const Vector<3> magCalZ(-0.000026, -0.000061, 0.007447);
 
 Magneto::Magneto() :
 	magnetoRead(MAGN_ADDRESS, REG_M_DATA),
@@ -36,23 +36,6 @@ Magneto::Magneto() :
 void Magneto::init(){
 	I2C::writeSync(MAGN_ADDRESS, REG_M_CONTROL, 0);
 	delayMicroseconds(1);		// magnetometer is kinda slow, needs some time to process things
-	I2C::writeSync(MAGN_ADDRESS, REG_M_CONTROL, 0b00001111);
-	delayMicroseconds(1);
-
-	{
-		I2CRead<3> magnAdjRead(MAGN_ADDRESS, REG_M_SENSITIVITY_ADJUSTMENT);
-		magnAdjRead.execute();
-
-		Serial.write("Magn adj ");
-		for(int i = 0; i < 3; ++i){
-			magnetoScale[i] = magnAdjRead[i];
-			magnetoScale[i] -= 128;
-			magnetoScale[i] *= (1.0 / 256);
-			magnetoScale[i] += 1;
-		}
-		magnetoScale.print();
-		Serial.write('\n');
-	}
 
 	magnetoMeasurementEnableWrite[0] = 1;
 	magnetoMeasurementEnableWrite.schedule();
@@ -62,18 +45,15 @@ void Magneto::read(){
 	if(magnetoPhase == 1){
 		Vector<3> temp;
     	for(int i = 0; i < 3; ++i){
-			temp[i] = ((short *) magnetoRead.data())[i] / 256.0;
+			temp[i] = ((short *) magnetoRead.data())[i];
     	}
 
-    	temp -= magCal0;
-    	magneto.x() = temp.dot(magCal1);
-		magneto.y() = temp.dot(magCal2);
-		magneto.z() = temp.dot(magCal3);
-		/*temp.cwiseMul(magnetoScale);
-		magneto.x() = temp.y();
-		magneto.y() = temp.x();
-		magneto.z() = -temp.z();*/
-    	magneto.normalize();
+		//magneto = temp;
+    	temp += magCal0;
+    	magneto.x() = temp.dot(magCalY);
+		magneto.y() = temp.dot(magCalX);
+		magneto.z() = -temp.dot(magCalZ);
+    	//magneto.normalize();
 	}
 	if(magnetoPhase == MAGNETO_PERIOD){
 		magnetoRead.schedule();
