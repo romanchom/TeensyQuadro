@@ -4,6 +4,9 @@
 #define LOOP_FREQUENCY 100
 #define LOW_PASS_FILTER 3
 
+static const float LOOP_DT = 1.0 / LOOP_FREQUENCY;
+static const float STANDARD_G = 9.80665;
+
 // undef evil code-breaking macros
 
 #endif // CONFIG_H

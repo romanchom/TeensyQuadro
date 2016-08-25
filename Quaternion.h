@@ -15,6 +15,12 @@ public:
 
 	void operator*=(const Quaternion & other);
 	Vector<4> & data(){ return mData; }
+
+	float & w(){ return mData[0]; }
+	float & x(){ return mData[1]; }
+	float & y(){ return mData[2]; }
+	float & z(){ return mData[3]; }
+	Vector<3> & v(){ return reinterpret_cast<Vector<3> &>(mData[1]); }
 	//void operator*=(float other);
 
 	// actually conjugate, but for unit quaternions it's the same

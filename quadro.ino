@@ -1,18 +1,17 @@
-#include "Sensor.h"
-#include "Motors.h"
 #include "Debug.h"
 
 #include "Vector.h"
 
+#include "MotorController.h"
 #include <nrf24l01.h>
 
 enum {
   ledPin = 13,
 };
 
-Sensor sensor;
-Motors motors;
+MotorController motoCtrl;
 RadioNRF radio;
+
 
 void blink(){
     static uint8_t ledState = 0;
@@ -25,13 +24,10 @@ const uint8_t address[] = { 192, 168, 123 };
 void setup() {
 	pinMode(ledPin, OUTPUT);
 	blink();
-	motors.init();
-	delay(1000);
+	delay(100);
     Serial.begin(9600);
-	Serial.println("Motors initialized.");
 	Serial.println("Hello");
-    sensor.init();
-	Serial.println("Sensor initialized.");
+	motoCtrl.init();
 
 	SPI.setSCK(14);
 	SPI.begin();
@@ -65,41 +61,20 @@ float clamp01(float val){
 
 int lastPacket = 0;
 
-float powerLeft = 0.0f;
-float powerRight = 0.0f;
 
 void loop() {
 	unsigned t = micros() + 1000000 / LOOP_FREQUENCY;
-	sensor.read();
 	int8_t data[5];
 	++lastPacket;
 	int count = radio.available();
 
 	if(count == 5){
 		radio.read(data, count);
-		float powerX = data[0];
-		float powerY = reinterpret_cast<uint8_t &>(data[1]);
-
-		powerX /= 128.0f;
-		powerY /= 255.0f;
-
-		powerLeft = 0.5f + powerX;
-		powerLeft *= powerY;
-		powerLeft = clamp01(powerLeft);
-
-		powerRight = 0.5f - powerX;
-		powerRight *= powerY;
-		powerRight = clamp01(powerRight);
 
 		lastPacket = 0;
 	}
 
-	if(lastPacket >= 15){
-		powerLeft = 0.0f;
-		powerRight = 0.0f;
-	}
-	motors.setPower(1, powerLeft);
-	motors.setPower(3, powerRight);
+	motoCtrl.update();
 
 	static int divider = 0;
 	if(++divider == 10){

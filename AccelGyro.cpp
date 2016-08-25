@@ -32,7 +32,6 @@ enum {
 };
 
 
-static const float STANDARD_G = 9.80665;
 static const float gyroMultipliers[4] = {
 	(250.0 * M_PI) / (180.0 * (1 << 15)),
 	(250.0 * M_PI) / (180.0 * (1 << 14)),
