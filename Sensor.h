@@ -7,6 +7,8 @@
 #include "Magneto.h"
 
 class Sensor{
+private:
+	Vector<3> mInitialMagneticVector;
 public:
 	AccelGyro accelGyro;
 	Magneto magneto;

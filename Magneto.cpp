@@ -2,9 +2,9 @@
 
 
 #define MAGNETO_PERIOD (10 / (1000 / LOOP_FREQUENCY))
-#if MAGNETO_PERIOD < 2
+#if MAGNETO_PERIOD < 1
 	#undef MAGNETO_PERIOD
-	#define MAGNETO_PERIOD 2
+	#define MAGNETO_PERIOD 1
 #endif
 
 enum {
@@ -59,11 +59,7 @@ void Magneto::init(){
 }
 
 void Magneto::read(){
-	if(magnetoPhase == MAGNETO_PERIOD){
-		magnetoRead.schedule();
-		magnetoPhase = 1;
-	}else if(magnetoPhase == 1){
-		magnetoMeasurementEnableWrite.schedule();
+	if(magnetoPhase == 1){
 		Vector<3> temp;
     	for(int i = 0; i < 3; ++i){
 			temp[i] = ((short *) magnetoRead.data())[i] / 256.0;
@@ -73,19 +69,16 @@ void Magneto::read(){
     	magneto.x() = temp.dot(magCal1);
 		magneto.y() = temp.dot(magCal2);
 		magneto.z() = temp.dot(magCal3);
-    	magneto.normalize();	
+		/*temp.cwiseMul(magnetoScale);
+		magneto.x() = temp.y();
+		magneto.y() = temp.x();
+		magneto.z() = -temp.z();*/
+    	magneto.normalize();
+	}
+	if(magnetoPhase == MAGNETO_PERIOD){
+		magnetoRead.schedule();
+		magnetoMeasurementEnableWrite.schedule();
+		magnetoPhase = 0;
 	}
 	++magnetoPhase;
 }
-
-
-
-
-
-
-
-
-
-
-
-

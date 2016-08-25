@@ -3,6 +3,8 @@
 
 #include "Vector.h"
 
+#define PRECISE_ANGULAR_RATE_INTEGRATION 1
+
 class Quaternion{
 	Vector<4> mData;
 public:
@@ -21,6 +23,9 @@ public:
 	void normalize();
 
 	Vector<3> transform(const Vector<3> & p);
+
+	void setFromTo(const Vector<3> & from, const Vector<3> & to);
+	void power(float p);
 
   void print(){
     mData.print();

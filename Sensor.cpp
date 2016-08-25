@@ -4,10 +4,19 @@
 
 #include "Debug.h"
 
+static const float MAX_COMPASS_DIFFERENCE_ANGLE = 5.0 * (M_PI / 180.0);
+
 void Sensor::init(){
 	I2C::init();
-	accelGyro.init();
 	magneto.init();
+	accelGyro.init();
+	mInitialMagneticVector.setZero();
+	for(int i = 0; i < 20; ++i){
+		magneto.read();
+		mInitialMagneticVector += magneto.magneto;
+		delay(10);
+	}
+	mInitialMagneticVector.normalize();
 }
 
 void Sensor::read(){
@@ -17,10 +26,42 @@ void Sensor::read(){
 	Vector<3> gyroI = accelGyro.gyro;
 	gyroI *= (1.0f / LOOP_FREQUENCY);
 
-	if(gyroI.sqLength() > 0.00000000001f){
+	attitude.integrateAngularRate(gyroI);
+	if(magneto.hasNewData()){
+		Vector<3> northAsRead = magneto.magneto;
+		northAsRead.normalize();
 
-		attitude.integrateAngularRate(gyroI);
+		Quaternion invAtt = attitude;
+		invAtt.invert();
+		Vector<3> northAsComputed = invAtt.transform(mInitialMagneticVector);
+		northAsComputed.normalize();
 
-		attitude.normalize();
+
+		Vector<3> axis = northAsRead.cross(northAsComputed);
+		axis.normalize();
+		float angle = northAsRead.dot(northAsComputed);
+		angle = acos(angle);
+		if(angle > MAX_COMPASS_DIFFERENCE_ANGLE){
+			angle -= MAX_COMPASS_DIFFERENCE_ANGLE;
+
+			Quaternion attFix;
+			attFix.fromAngleAxis(angle, axis);
+			// multiplication on left side is in sensor frame of reference
+			attitude *= attFix;
+		}
+
+		Serial.print("Quat\t");
+		attitude.print();
+		Serial.println();
+
+		Serial.print("Mag\t");
+		northAsRead.print();
+		Serial.println();
+
+		Serial.print("Acc\t");
+		northAsComputed.print();
+		Serial.println();
 	}
+
+	attitude.normalize();
 }

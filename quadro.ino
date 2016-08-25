@@ -101,9 +101,6 @@ void loop() {
 	motors.setPower(1, powerLeft);
 	motors.setPower(3, powerRight);
 
-	sensor.attitude.print();
-	Serial.println();
-
 	static int divider = 0;
 	if(++divider == 10){
 		divider = 0;

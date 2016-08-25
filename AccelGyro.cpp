@@ -31,6 +31,8 @@ enum {
 	REG_AG_WHO_AM_I = 0x75,
 };
 
+
+static const float STANDARD_G = 9.80665;
 static const float gyroMultipliers[4] = {
 	(250.0 * M_PI) / (180.0 * (1 << 15)),
 	(250.0 * M_PI) / (180.0 * (1 << 14)),
@@ -39,10 +41,10 @@ static const float gyroMultipliers[4] = {
 };
 
 static const float accelMultipliers[4] = {
-	(1.0 / (1 << 14)),
-	(1.0 / (1 << 13)),
-	(1.0 / (1 << 12)),
-	(1.0 / (1 << 11)),
+	(STANDARD_G / (1 << 14)),
+	(STANDARD_G / (1 << 13)),
+	(STANDARD_G / (1 << 12)),
+	(STANDARD_G / (1 << 11)),
 };
 
 AccelGyro::AccelGyro() :
@@ -99,6 +101,8 @@ void AccelGyro::init(){
 }
 
 void AccelGyro::calibrate(){
+	mGyroAvgDrift.setZero();
+	mAccelAvgOffset.setZero();
 	read();
 	Vector<3> average;
 	Vector<3> last;
@@ -114,7 +118,7 @@ void AccelGyro::calibrate(){
 		read();
 		delay(GYRO_CALIBRATION_DELAY);
 	}
-	average *= 1.0f / GYRO_CALIBRATION_SAMPLES;
+	average /= GYRO_CALIBRATION_SAMPLES;
 	mGyroAvgDrift = average;
 	Serial.print("Gyro cal: ");
 	average.print();
@@ -136,7 +140,7 @@ void AccelGyro::calibrate(){
 	}
 	average *= 1.0f / ACCEL_CALIBRATION_SAMPLES;
 	mAccelAvgOffset = average;
-	mAccelAvgOffset.z() -= 9.8f;
+	mAccelAvgOffset.z() -= STANDARD_G;
 }
 
 void AccelGyro::readAccel(){

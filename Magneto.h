@@ -14,12 +14,11 @@ private:
 	unsigned magnetoPhase;
 	Vector<3> magnetoScale;
 	Vector<3> magnetoOffset;
-
-	unsigned period;
 public:
 	Magneto();
 	void init();
 	void read();
+	bool hasNewData(){ return magnetoPhase == 1; }
 	Vector<3> magneto;
 };
 
