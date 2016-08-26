@@ -57,11 +57,11 @@ void Sensor::read(){
 
 		/*Serial.print("Mag\t");
 		magneto.magneto.print();
-		Serial.println();
+		Serial.println();*/
 
 		Serial.print("Acc\t");
-		northAsComputed.print();
-		Serial.println();*/
+		accelGyro.accel.print();
+		Serial.println();
 	}
 
 	attitude.normalize();

@@ -16,10 +16,14 @@ private:
 	PIDController mVerticalPID;
 
 	Quaternion mTargetOrientation;
+
 public:
 	MotorController();
 	void init();
 	void update();
+	void setEnabled(bool enabled);
+	void setHorizontalInput(float x, float y);
+	void setVerticalInput(float y);
 };
 
 #endif // MOTORCONTROLLER_H

@@ -1,13 +1,20 @@
 #include "MotorController.h"
 
+#define ROLL_PITCH_SEPARATE_PID
+
 static const float ROLL_KD = 0.0f;
 static const float ROLL_KP = 0.0f;
-static const float ROLL_KI = 0.0f;
+static const float ROLL_KI = 0.1f;
 
+#ifdef ROLL_PITCH_SEPARATE_PID
+static const float PITCH_KD = 0.0f;
+static const float PITCH_KP = 0.0f;
+static const float PITCH_KI = 0.0f;
+#else
 static const float PITCH_KD = ROLL_KD;
 static const float PITCH_KP = ROLL_KP;
 static const float PITCH_KI = ROLL_KP;
-
+#endif
 static const float YAW_KD = 0.0f;
 static const float YAW_KP = 0.0f;
 static const float YAW_KI = 0.0f;
@@ -46,8 +53,10 @@ void MotorController::update(){
 	Vector<3> axis = difference.v();
 	// atan2 is supposedly more numerically stable
 	float angle = atan2(axis.length(), difference.w());
-	axis /= sin(angle);
-	angle *= 2;
+	if(angle > M_PI / 2) angle -= M_PI;
+	//axis /= sin(angle);
+	axis.normalize();
+	//angle *= 2;
 	axis *= angle;
 	// axis now containst errors for each rotation axis
 
@@ -87,13 +96,16 @@ void MotorController::update(){
 	// motor 0 - front
 	float power;
 
+	Serial.print("Roll\t");
+	Serial.println(mRollPID.output());
+
 	power = mVerticalPID.output();
 	power += mPitchPID.output();
 	power += mYawPID.output();
 	mMotors.setPower(0, power);
 
 	power = mVerticalPID.output();
-	power += mRollPID.output();
+	power -= mRollPID.output();
 	power -= mYawPID.output();
 	mMotors.setPower(1, power);
 
@@ -103,7 +115,15 @@ void MotorController::update(){
 	mMotors.setPower(2, power);
 
 	power = mVerticalPID.output();
-	power -= mRollPID.output();
+	power += mRollPID.output();
 	power -= mYawPID.output();
 	mMotors.setPower(3, power);
+}
+
+void MotorController::setHorizontalInput(float x, float y){
+
+}
+
+void MotorController::setVerticalInput(float y){
+
 }

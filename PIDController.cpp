@@ -11,25 +11,16 @@ PIDController::PIDController() :
 
 void PIDController::update(float error, float dt){
 	// WOW!! trapezoidal rule
-	float temp = error;
-	temp += mLastError;
-	temp *= dt;
-	temp *= 0.5f;
-	mIntegral += temp;
+	// optional division by 2 which might as well be included in Ki
+	mIntegral += (error + mLastError) * dt;
 
-	temp = error;
-	temp -= mLastError;
-	temp /= dt;
 
-	temp *= mKd;
+	// derivative
+	mOutput = (error - mLastError) * mKd / dt;
+	// proportional
+	mOutput += error * mKp;
+	// integral
+	mOutput += mIntegral * mKi;
 
-	mOutput = temp;
-
-	temp = error;
-	temp *= mKp;
-	mOutput += temp;
-
-	temp = mIntegral;
-	temp *= mKi;
-	mOutput += temp;
+	mLastError = error;
 }

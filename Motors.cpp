@@ -1,6 +1,16 @@
 #include "Motors.h"
 
+#include <Arduino.h>
 #include <core_pins.h>
+
+
+enum {
+	PIN0 = 3,
+	MOTOR_COUNT = 4, // who would have guessed
+	RESOLUTION = 16,
+};
+
+static const float FREQUENCY = 366.2109; // frequency closest to 400Hz at 96MHz clock
 
 static float clamp01(float val){
 	if(val < 0.0f) return 0.0f;
@@ -8,19 +18,37 @@ static float clamp01(float val){
 	return val;
 }
 
+static int computeDutyCycle(float power){
+	float duty = (1.0f + clamp01(power)) * (FREQUENCY * 0.001 * (1 << 16));
+	return static_cast<int>(duty);
+}
+
 void Motors::init(){
 	analogWriteResolution(RESOLUTION);
 	for(int i = 0; i < MOTOR_COUNT; ++i){
 		int pin = PIN0 + i;
 		pinMode(pin, OUTPUT);
-		setPower(i, 0.0f);
     	analogWriteFrequency(pin, FREQUENCY);
 	}
-	delay(100);
+	//setPowerAll(0.0f);
+	//delay(100);
+	setPowerAll(1.0f);
+	delay(1000);
+	setPowerAll(0.0f);
 }
 
 void Motors::setPower(int index, float power){
-	float duty = (1.0f + clamp01(power)) * (FREQUENCY * 0.001f * (1 << 16));
-	int dutyInt = static_cast<int>(duty);
-	analogWrite(PIN0 + index, dutyInt);
+	int duty = computeDutyCycle(power);
+	Serial.print("Motor");
+	Serial.print(index);
+	Serial.print('\t');
+	Serial.println(duty);
+	analogWrite(PIN0 + index, duty);
+}
+
+void Motors::setPowerAll(float power){
+	int duty = computeDutyCycle(power);
+	for(int i = 0; i < MOTOR_COUNT; ++i){
+		analogWrite(PIN0 + i, duty);
+	}
 }

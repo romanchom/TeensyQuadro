@@ -186,7 +186,10 @@ void AccelGyro::setAccelRange(int16_t maxAbs){
 		else if(maxAbs < GYRO_LOWER_RANGE && accelRange > 0) --newRange;
 
 		if(newRange != accelRange) {
-			setAccelRangeWrite[0] = accelRange << 3;
+			Serial.print("AccelRange\t");
+			Serial.print(newRange);
+			Serial.println();
+			setAccelRangeWrite[0] = newRange << 3;
 			setAccelRangeWrite.schedule();
 			accelRange = newRange | 0x80;
 		}

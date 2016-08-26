@@ -61,7 +61,6 @@ float clamp01(float val){
 
 int lastPacket = 0;
 
-
 void loop() {
 	unsigned t = micros() + 1000000 / LOOP_FREQUENCY;
 	int8_t data[5];
