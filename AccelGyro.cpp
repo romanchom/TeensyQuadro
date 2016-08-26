@@ -119,10 +119,6 @@ void AccelGyro::calibrate(){
 	}
 	average /= GYRO_CALIBRATION_SAMPLES;
 	mGyroAvgDrift = average;
-	Serial.print("Gyro cal: ");
-	average.print();
-	Serial.println();
-
 	average.setZero();
 	last = accel;
 	for(int i = 0; i < ACCEL_CALIBRATION_SAMPLES; ++i){
@@ -186,9 +182,6 @@ void AccelGyro::setAccelRange(int16_t maxAbs){
 		else if(maxAbs < GYRO_LOWER_RANGE && accelRange > 0) --newRange;
 
 		if(newRange != accelRange) {
-			Serial.print("AccelRange\t");
-			Serial.print(newRange);
-			Serial.println();
 			setAccelRangeWrite[0] = newRange << 3;
 			setAccelRangeWrite.schedule();
 			accelRange = newRange | 0x80;

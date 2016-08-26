@@ -59,6 +59,16 @@ float clamp01(float val){
 	return val;
 }
 
+
+struct UserInput{
+	float inputX;
+	float inputY;
+	float inputVertical;
+	bool enable;
+};
+
+static_assert(sizeof(UserInput) <= 32, "UserInput struct too big to send");
+
 int lastPacket = 0;
 
 void loop() {
@@ -67,10 +77,25 @@ void loop() {
 	++lastPacket;
 	int count = radio.available();
 
-	if(count == 5){
-		radio.read(data, count);
+	if(count == sizeof(UserInput)){
+		UserInput userInput;
+		radio.read(&userInput, sizeof(UserInput));
 
+		motoCtrl.setEnabled(userInput.enable);
+
+		if(userInput.enable){
+			motoCtrl.setHorizontalInput(userInput.inputX, userInput.inputY);
+			motoCtrl.setVerticalInput(userInput.inputVertical);
+		}
 		lastPacket = 0;
+	}else{
+		// just get it out of fifo
+		char arr[32];
+		radio.read(arr, count);
+	}
+
+	if(lastPacket >= 15){
+		motoCtrl.setEnabled(false);
 	}
 
 	motoCtrl.update();

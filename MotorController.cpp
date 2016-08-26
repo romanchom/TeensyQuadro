@@ -3,8 +3,8 @@
 #define ROLL_PITCH_SEPARATE_PID
 
 static const float ROLL_KD = 0.0f;
-static const float ROLL_KP = 0.0f;
-static const float ROLL_KI = 0.1f;
+static const float ROLL_KP = 0.2f;
+static const float ROLL_KI = 0.0f;
 
 #ifdef ROLL_PITCH_SEPARATE_PID
 static const float PITCH_KD = 0.0f;
@@ -23,7 +23,12 @@ static const float VERTICAL_KD = 0.0f;
 static const float VERTICAL_KP = 0.0f;
 static const float VERTICAL_KI = 0.0f;
 
-MotorController::MotorController(){
+MotorController::MotorController() :
+	mInputX(0.0f),
+	mInputY(0.0f),
+	mInputVertical(0.0f),
+	mEnabled(false)
+{
 	mRollPID.setParams(ROLL_KD, ROLL_KP, ROLL_KI);
 	mPitchPID.setParams(PITCH_KD, PITCH_KP, PITCH_KI);
 	mYawPID.setParams(YAW_KD, YAW_KP, YAW_KP);
@@ -35,11 +40,35 @@ void MotorController::init(){
 	Serial.println("Motors initialized.");
     mSensor.init();
 	Serial.println("Sensor initialized.");
+	mSensor.setIsOnGround(true);
 }
 
 void MotorController::update(){
 	mSensor.read();
 
+	{
+		Quaternion userInputRot;
+		// rotating right is rotating oround positive Y axis
+		// rotating forward is rotating around negative X axis, I think
+		Serial.print("Mag\t");
+		Serial.print(mInputX);
+		Serial.print('\t');
+		Serial.print(mInputY);
+		Serial.print('\t');
+		Serial.println(0.0f);
+		Vector<3> axis(-mInputY, mInputX);
+		float angle = axis.length();
+		if(angle > 0.00001f){
+			axis /= angle;
+			userInputRot.fromAngleAxis(angle * LOOP_DT, axis);
+			userInputRot *= mTargetOrientation;
+			mTargetOrientation = userInputRot;
+		}
+
+		Serial.print("Quat\t");
+		mTargetOrientation.print();
+		Serial.println();
+	}
 	// step  one
 	// obtain rotation from current attitude to target attitude
 	Quaternion difference;
@@ -68,16 +97,16 @@ void MotorController::update(){
 	float accelError = 0;
 	// comparing with something larger than 0 avoids singularity near horizontal flight
 	if(up.z() > 0.05f){
-		// try to keep absolute vertical acceleration close to g
-		accelError = 1.0f / up.z();
+		// try to keep absolute vertical acceleration close to g +- user input
+		accelError = (1.0f + mInputVertical) / up.z();
 
 		angle = acos(up.z());
 		angle -= M_PI * 0.4f;
 		angle *= 30;
 		// as long as relatively vertical
-		accelError /= exp(angle);
+		accelError /= (1 + exp(angle));
 		// after that keep a small constant acceleration to maintain maneuverability
-		accelError += minAcc / exp(-angle);
+		accelError += minAcc / (1 + exp(-angle));
 	}else{
 		accelError = minAcc;
 	}
@@ -95,9 +124,6 @@ void MotorController::update(){
 	// accumulate PID outputs for each motor
 	// motor 0 - front
 	float power;
-
-	Serial.print("Roll\t");
-	Serial.println(mRollPID.output());
 
 	power = mVerticalPID.output();
 	power += mPitchPID.output();
@@ -120,10 +146,13 @@ void MotorController::update(){
 	mMotors.setPower(3, power);
 }
 
-void MotorController::setHorizontalInput(float x, float y){
-
-}
-
-void MotorController::setVerticalInput(float y){
-
+void MotorController::setEnabled(bool enabled){
+	if(mEnabled != enabled){
+		mEnabled = enabled;
+		mSensor.setIsOnGround(!enabled);
+		if(!enabled){
+			mTargetOrientation.setIdentity();
+			mMotors.setPowerAll(0.0f);
+		}
+	}
 }

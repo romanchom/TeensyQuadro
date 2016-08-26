@@ -10,6 +10,7 @@ class Quaternion{
 public:
 	Quaternion();
 
+	void setIdentity();
 	void fromAngleAxis(float angle, const Vector<3> & rot);
 	void integrateAngularRate(const Vector<3> & angularRates);
 

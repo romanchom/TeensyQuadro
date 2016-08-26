@@ -39,10 +39,6 @@ void Motors::init(){
 
 void Motors::setPower(int index, float power){
 	int duty = computeDutyCycle(power);
-	Serial.print("Motor");
-	Serial.print(index);
-	Serial.print('\t');
-	Serial.println(duty);
 	analogWrite(PIN0 + index, duty);
 }
 

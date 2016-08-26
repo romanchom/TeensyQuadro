@@ -16,14 +16,22 @@ private:
 	PIDController mVerticalPID;
 
 	Quaternion mTargetOrientation;
-
+	float mInputX;
+	float mInputY;
+	float mInputVertical;
+	bool mEnabled;
 public:
 	MotorController();
 	void init();
 	void update();
 	void setEnabled(bool enabled);
-	void setHorizontalInput(float x, float y);
-	void setVerticalInput(float y);
+	void setHorizontalInput(float x, float y){
+		mInputX = x;
+		mInputY = y;
+	};
+	void setVerticalInput(float input){
+		mInputVertical = input;
+	}
 };
 
 #endif // MOTORCONTROLLER_H

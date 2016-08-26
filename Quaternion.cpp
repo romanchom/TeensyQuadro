@@ -2,6 +2,12 @@
 
 Quaternion::Quaternion() : mData(1.0f, 0.0f, 0.0f, 0.0f) {}
 
+void Quaternion::setIdentity(){
+	mData[0] = 1.0f;
+	mData[1] = 0.0f;
+	mData[2] = 0.0f;
+	mData[3] = 0.0f;
+}
 
 void Quaternion::operator*=(const Quaternion & other){
 	float temp[4];
