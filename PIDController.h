@@ -18,6 +18,10 @@ public:
 		mKi = i;
 	}
 	float output(){ return mOutput; }
+	void reset(){
+		mLastError = 0;
+		mIntegral = 0;
+	}
 };
 
 #endif // PID_H

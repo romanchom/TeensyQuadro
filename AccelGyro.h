@@ -9,10 +9,8 @@
 class AccelGyro {
 private:
 	enum{
-		GYRO_CALIBRATION_SAMPLES = 100,
-		GYRO_CALIBRATION_DELAY = 10,
-		ACCEL_CALIBRATION_SAMPLES = 100,
-		ACCEL_CALIBRATION_DELAY = 10,
+		CALIBRATION_SAMPLES = 100,
+		CALIBRATION_DELAY = 10,
 
 		// upper bound is sqrt of 2 times range of short
 		// lower bound is half of that
@@ -22,8 +20,8 @@ private:
 		GYRO_LOWER_RANGE = 11585,
 	};
 
-	static constexpr float GYRO_CALIBRATION_TOLERANCE = 0.1f;
-	static constexpr float ACCEL_CALIBRATION_TOLERANCE = 0.5f;
+	static constexpr float GYRO_CALIBRATION_TOLERANCE = 0.005f;
+	static constexpr float ACCEL_CALIBRATION_TOLERANCE = 0.2f;
 
 	uint8_t accelRange;
 	uint8_t gyroRange;

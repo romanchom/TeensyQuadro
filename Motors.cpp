@@ -12,6 +12,14 @@ enum {
 
 static const float FREQUENCY = 366.2109; // frequency closest to 400Hz at 96MHz clock
 
+static const float SAFETY_POWER = 1.0f;
+
+static float clampSafe(float val){
+	if(val < 0.0f) return 0.0f;
+	if(val > SAFETY_POWER) return SAFETY_POWER;
+	return val;
+}
+
 static float clamp01(float val){
 	if(val < 0.0f) return 0.0f;
 	if(val > 1.0f) return 1.0f;
@@ -19,7 +27,7 @@ static float clamp01(float val){
 }
 
 static int computeDutyCycle(float power){
-	float duty = (1.0f + clamp01(power)) * (FREQUENCY * 0.001 * (1 << 16));
+	float duty = (1.0f + power) * (FREQUENCY * 0.001 * (1 << 16));
 	return static_cast<int>(duty);
 }
 
@@ -32,13 +40,13 @@ void Motors::init(){
 	}
 	//setPowerAll(0.0f);
 	//delay(100);
-	setPowerAll(1.0f);
-	delay(1000);
 	setPowerAll(0.0f);
+	//delay(1000);
+	//setPowerAll(0.0f);
 }
 
 void Motors::setPower(int index, float power){
-	int duty = computeDutyCycle(power);
+	int duty = computeDutyCycle(clampSafe(power));
 	analogWrite(PIN0 + index, duty);
 }
 

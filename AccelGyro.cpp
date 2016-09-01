@@ -103,39 +103,37 @@ void AccelGyro::calibrate(){
 	mGyroAvgDrift.setZero();
 	mAccelAvgOffset.setZero();
 	read();
-	Vector<3> average;
-	Vector<3> last;
-	for(int i = 0; i < GYRO_CALIBRATION_SAMPLES; ++i){
-		last -= gyro;
-		if(last.sqLength() > GYRO_CALIBRATION_TOLERANCE * GYRO_CALIBRATION_TOLERANCE){
-			average.setZero();
+	delay(1000);
+	Vector<3> lastGyro;
+	Vector<3> lastAccel;
+	Vector<3> avgGyro;
+	Vector<3> avgAccel;
+	for(int i = 0; i < CALIBRATION_SAMPLES; ++i){
+		lastGyro -= gyro;
+		lastAccel -= accel;
+		Serial.print("G: ");
+		Serial.print(lastGyro.length(), 10);
+		Serial.print("\tA: ");
+		Serial.println(lastAccel.length(), 10);
+		if((lastGyro.sqLength() > GYRO_CALIBRATION_TOLERANCE * GYRO_CALIBRATION_TOLERANCE) ||
+			(lastAccel.sqLength() > ACCEL_CALIBRATION_TOLERANCE * ACCEL_CALIBRATION_TOLERANCE)){
+			avgGyro.setZero();
+			avgAccel.setZero();
 			i = 0;
 		}else{
-			average += gyro;
+			avgGyro += gyro;
+			avgAccel += accel;
 		}
-		last = gyro;
+		lastGyro = gyro;
+		lastAccel = accel;
 		read();
-		delay(GYRO_CALIBRATION_DELAY);
+		delay(CALIBRATION_DELAY);
 	}
-	average /= GYRO_CALIBRATION_SAMPLES;
-	mGyroAvgDrift = average;
-	average.setZero();
-	last = accel;
-	for(int i = 0; i < ACCEL_CALIBRATION_SAMPLES; ++i){
-		last -= accel;
-		if(last.sqLength() > ACCEL_CALIBRATION_TOLERANCE * ACCEL_CALIBRATION_TOLERANCE){
-			average.setZero();
-			i = 0;
-		}else{
-			average += accel;
-		}
-		last = accel;
-		read();
-		delay(ACCEL_CALIBRATION_DELAY);
-	}
-	average *= 1.0f / ACCEL_CALIBRATION_SAMPLES;
-	mAccelAvgOffset = average;
-	mAccelAvgOffset.z() -= STANDARD_G;
+	avgGyro /= CALIBRATION_SAMPLES;
+	mGyroAvgDrift = avgGyro;
+	avgAccel /= CALIBRATION_SAMPLES;
+	avgAccel.z() -= STANDARD_G;
+	mAccelAvgOffset = avgAccel;
 }
 
 void AccelGyro::readAccel(){

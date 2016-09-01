@@ -65,6 +65,7 @@ struct UserInput{
 	float inputY;
 	float inputVertical;
 	bool enable;
+	float pid[3];
 };
 
 static_assert(sizeof(UserInput) <= 32, "UserInput struct too big to send");
@@ -76,12 +77,14 @@ void loop() {
 	int8_t data[5];
 	++lastPacket;
 	int count = radio.available();
-
 	if(count == sizeof(UserInput)){
 		UserInput userInput;
 		radio.read(&userInput, sizeof(UserInput));
 
 		motoCtrl.setEnabled(userInput.enable);
+		ROLL_KD = userInput.pid[0];
+		ROLL_KP = userInput.pid[1];
+		ROLL_KI = userInput.pid[2];
 
 		if(userInput.enable){
 			motoCtrl.setHorizontalInput(userInput.inputX, userInput.inputY);
@@ -94,11 +97,12 @@ void loop() {
 		radio.read(arr, count);
 	}
 
-	if(lastPacket >= 15){
+	if(lastPacket >= 50){
 		motoCtrl.setEnabled(false);
 	}
 
 	motoCtrl.update();
+	radio.ackPayload(&(motoCtrl.sensor().attitude), 16, true);
 
 	static int divider = 0;
 	if(++divider == 10){

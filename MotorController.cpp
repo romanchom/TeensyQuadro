@@ -1,10 +1,22 @@
 #include "MotorController.h"
 
-#define ROLL_PITCH_SEPARATE_PID
+//#define ROLL_PITCH_SEPARATE_PID
 
-static const float ROLL_KD = 0.0f;
-static const float ROLL_KP = 0.2f;
-static const float ROLL_KI = 0.0f;
+
+
+float ROLL_KD = 0.03f;
+float ROLL_KP = 0.15f;
+float ROLL_KI = 0.00005f;
+
+
+#define PITCH_KD ROLL_KD
+#define PITCH_KP ROLL_KP
+#define PITCH_KI ROLL_KI
+
+/*
+static const float ROLL_KD = 0.03f;
+static const float ROLL_KP = 0.15f;
+static const float ROLL_KI = 0.00005f;
 
 #ifdef ROLL_PITCH_SEPARATE_PID
 static const float PITCH_KD = 0.0f;
@@ -13,15 +25,15 @@ static const float PITCH_KI = 0.0f;
 #else
 static const float PITCH_KD = ROLL_KD;
 static const float PITCH_KP = ROLL_KP;
-static const float PITCH_KI = ROLL_KP;
-#endif
+static const float PITCH_KI = ROLL_KI;
+#endif*/
 static const float YAW_KD = 0.0f;
 static const float YAW_KP = 0.0f;
 static const float YAW_KI = 0.0f;
 
-static const float VERTICAL_KD = 0.0f;
-static const float VERTICAL_KP = 0.0f;
-static const float VERTICAL_KI = 0.0f;
+static const float VERTICAL_KD = 0;//0.001f;
+static const float VERTICAL_KP = 0.05f;
+static const float VERTICAL_KI = 0;//0.01f;
 
 MotorController::MotorController() :
 	mInputX(0.0f),
@@ -31,7 +43,7 @@ MotorController::MotorController() :
 {
 	mRollPID.setParams(ROLL_KD, ROLL_KP, ROLL_KI);
 	mPitchPID.setParams(PITCH_KD, PITCH_KP, PITCH_KI);
-	mYawPID.setParams(YAW_KD, YAW_KP, YAW_KP);
+	mYawPID.setParams(YAW_KD, YAW_KP, YAW_KI);
 	mVerticalPID.setParams(VERTICAL_KD, VERTICAL_KP, VERTICAL_KI);
 }
 
@@ -45,29 +57,24 @@ void MotorController::init(){
 
 void MotorController::update(){
 	mSensor.read();
+	mRollPID.setParams(ROLL_KD, ROLL_KP, ROLL_KI);
+	mPitchPID.setParams(PITCH_KD, PITCH_KP, PITCH_KI);
+
+	if(!mEnabled) return;
 
 	{
 		Quaternion userInputRot;
 		// rotating right is rotating oround positive Y axis
 		// rotating forward is rotating around negative X axis, I think
-		Serial.print("Mag\t");
-		Serial.print(mInputX);
-		Serial.print('\t');
-		Serial.print(mInputY);
-		Serial.print('\t');
-		Serial.println(0.0f);
 		Vector<3> axis(-mInputY, mInputX);
 		float angle = axis.length();
 		if(angle > 0.00001f){
 			axis /= angle;
+			// input scaling
 			userInputRot.fromAngleAxis(angle * LOOP_DT, axis);
 			userInputRot *= mTargetOrientation;
 			mTargetOrientation = userInputRot;
 		}
-
-		Serial.print("Quat\t");
-		mTargetOrientation.print();
-		Serial.println();
 	}
 	// step  one
 	// obtain rotation from current attitude to target attitude
@@ -95,8 +102,9 @@ void MotorController::update(){
 	up = mSensor.attitude.transform(up);
 	static const float minAcc = 0.2f;
 	float accelError = 0;
+	accelError = mInputVertical;
 	// comparing with something larger than 0 avoids singularity near horizontal flight
-	if(up.z() > 0.05f){
+	/*if(up.z() > 0.05f){
 		// try to keep absolute vertical acceleration close to g +- user input
 		accelError = (1.0f + mInputVertical) / up.z();
 
@@ -109,9 +117,12 @@ void MotorController::update(){
 		accelError += minAcc / (1 + exp(-angle));
 	}else{
 		accelError = minAcc;
-	}
+	}*/
 	accelError *= STANDARD_G;
-	accelError -= mSensor.accelGyro.accel.z();
+	//accelError = accelError - mSensor.accelGyro.accel.z();
+
+	//Serial.print(accelError);
+	//Serial.println();
 
 	// step four
 	// apply errors to PIDs
@@ -122,25 +133,32 @@ void MotorController::update(){
 
 	// step five
 	// accumulate PID outputs for each motor
-	// motor 0 - front
+	// motor 0 - front right
+	// motor 1 - rear right
+	// motor 2 - rear left
+	// motor 3 - front left
 	float power;
 
 	power = mVerticalPID.output();
 	power += mPitchPID.output();
+	power -= mRollPID.output();
 	power += mYawPID.output();
 	mMotors.setPower(0, power);
 
 	power = mVerticalPID.output();
+	power -= mPitchPID.output();
 	power -= mRollPID.output();
 	power -= mYawPID.output();
 	mMotors.setPower(1, power);
 
 	power = mVerticalPID.output();
 	power -= mPitchPID.output();
+	power += mRollPID.output();
 	power += mYawPID.output();
 	mMotors.setPower(2, power);
 
 	power = mVerticalPID.output();
+	power += mPitchPID.output();
 	power += mRollPID.output();
 	power -= mYawPID.output();
 	mMotors.setPower(3, power);
@@ -153,6 +171,9 @@ void MotorController::setEnabled(bool enabled){
 		if(!enabled){
 			mTargetOrientation.setIdentity();
 			mMotors.setPowerAll(0.0f);
+			mVerticalPID.reset();
+			mPitchPID.reset();
+			mYawPID.reset();
 		}
 	}
 }

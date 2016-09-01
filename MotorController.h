@@ -5,6 +5,10 @@
 #include "Motors.h"
 #include "PIDController.h"
 
+extern float ROLL_KD;
+extern float ROLL_KP;
+extern float ROLL_KI;
+
 class MotorController{
 private:
 	Sensor mSensor;
@@ -32,6 +36,7 @@ public:
 	void setVerticalInput(float input){
 		mInputVertical = input;
 	}
+	Sensor & sensor(){ return mSensor; }
 };
 
 #endif // MOTORCONTROLLER_H
