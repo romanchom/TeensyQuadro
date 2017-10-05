@@ -3,6 +3,8 @@
 //#define ROLL_PITCH_SEPARATE_PID
 
 
+#include "MonitorMsg.h"
+
 
 float ROLL_KD = 0.03f;
 float ROLL_KP = 0.15f;
@@ -26,14 +28,19 @@ static const float PITCH_KI = 0.0f;
 static const float PITCH_KD = ROLL_KD;
 static const float PITCH_KP = ROLL_KP;
 static const float PITCH_KI = ROLL_KI;
-#endif*/
+#endif
 static const float YAW_KD = 0.0f;
 static const float YAW_KP = 0.0f;
-static const float YAW_KI = 0.0f;
+static const float YAW_KI = 0.0f;*/
 
-static const float VERTICAL_KD = 0;//0.001f;
-static const float VERTICAL_KP = 0.05f;
-static const float VERTICAL_KI = 0;//0.01f;
+
+#define YAW_KD ROLL_KD
+#define YAW_KP ROLL_KP
+#define YAW_KI ROLL_KI
+
+static const float VERTICAL_KD = 0.0000001f;
+static const float VERTICAL_KP = 0.005f;
+static const float VERTICAL_KI = 0.025f;
 
 MotorController::MotorController() :
 	mInputX(0.0f),
@@ -100,11 +107,11 @@ void MotorController::update(){
 	// calculate vertical acceleration errors
 	Vector<3> up(0.0f, 0.0f, 1.0f);
 	up = mSensor.attitude.transform(up);
-	static const float minAcc = 0.2f;
+	float minAcc = 0.8f + mInputVertical;
 	float accelError = 0;
 	accelError = mInputVertical;
 	// comparing with something larger than 0 avoids singularity near horizontal flight
-	/*if(up.z() > 0.05f){
+	if(up.z() > 0.05f){
 		// try to keep absolute vertical acceleration close to g +- user input
 		accelError = (1.0f + mInputVertical) / up.z();
 
@@ -117,9 +124,11 @@ void MotorController::update(){
 		accelError += minAcc / (1 + exp(-angle));
 	}else{
 		accelError = minAcc;
-	}*/
+	}
 	accelError *= STANDARD_G;
-	//accelError = accelError - mSensor.accelGyro.accel.z();
+	accelError = accelError - mSensor.accelGyro.accel.z();
+
+	//monitorPrint(20, "ERROR: ", accelError);
 
 	//Serial.print(accelError);
 	//Serial.println();
@@ -138,7 +147,7 @@ void MotorController::update(){
 	// motor 2 - rear left
 	// motor 3 - front left
 	float power;
-
+	//return;
 	power = mVerticalPID.output();
 	power += mPitchPID.output();
 	power -= mRollPID.output();

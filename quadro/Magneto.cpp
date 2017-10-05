@@ -19,12 +19,12 @@ enum {
 
 // I got those numbers from an app called Magneto, see
 // https://sites.google.com/site/sailboatinstruments1/home
-static const Vector<3> magCal0(91.542023, 31.508121, -10.970412);
+static const Vector<3> magCal0(87.251003, -16.269410, -13.964382);
 
 // callibrate, swap x and y, negate z
-static const Vector<3> magCalX(0.006659, 0.000091, -0.000026);
-static const Vector<3> magCalY(0.000091, 0.007014, -0.000061);
-static const Vector<3> magCalZ(-0.000026, -0.000061, 0.007447);
+static const Vector<3> magCalX(0.006861, 0.000085, -0.000040);
+static const Vector<3> magCalY(0.000085, 0.007306, -0.000005);
+static const Vector<3> magCalZ(-0.000040, -0.000005, 0.007618);
 
 Magneto::Magneto() :
 	magnetoRead(MAGN_ADDRESS, REG_M_DATA),

@@ -3,10 +3,11 @@
 #include <cmath>
 #include <algorithm>
 #include "Debug.h"
+#include "MonitorMsg.h"
 
 enum {
 	GYRO_OUTPUT_RATE = (LOW_PASS_FILTER ? 1000 : 8000),
-	SAMPLE_RATE_DIVIDER = (GYRO_OUTPUT_RATE / LOOP_FREQUENCY - 1),
+	SAMPLE_RATE_DIVIDER = (GYRO_OUTPUT_RATE / (LOOP_FREQUENCY) - 1),
 
 	GYRO_SELFTEST_X_BIT = 7,
 	GYRO_SELFTEST_Y_BIT = 6,
@@ -66,10 +67,7 @@ void AccelGyro::init(){
 			delay(1);
 		}
 	}
-	//delay(10000);
-
 	if(!i2c_ok){
-		//_log("Could not connect to sensor.\n\r");
 		blink_error(0b01010101);
 		return;
 	}
@@ -153,21 +151,21 @@ void AccelGyro::readAccel(){
 }
 
 void AccelGyro::readGyro(){
-	int16_t maxAbs = 0;
+	int32_t maxAbs = 0;
 	for(int i = 0; i < 3; ++i){
 		int16_t data = ((int16_t *) accelGyroTempRead.data())[i + 4];
 		data = __builtin_bswap16(data);
-		maxAbs = std::max<int16_t>(maxAbs, std::abs<int16_t>(data));
+		maxAbs = std::max<int32_t>(maxAbs, std::abs<int32_t>(static_cast<int32_t>(data)));
 		gyro[i] = data;
 	}
-
+	
 	gyro *= gyroMul;
 	gyro -= mGyroAvgDrift;
 
 	setGyroRange(maxAbs);
 }
 
-void AccelGyro::setAccelRange(int16_t maxAbs){
+void AccelGyro::setAccelRange(int32_t maxAbs){
 	// range changed in previous cycle
 	if(accelRange & 0x80){
 		// reset flag
@@ -187,8 +185,7 @@ void AccelGyro::setAccelRange(int16_t maxAbs){
 	}
 }
 
-void AccelGyro::setGyroRange(int16_t maxAbs){
-	// range changed in previous cycle
+void AccelGyro::setGyroRange(int32_t maxAbs){
 	if(gyroRange & 0x80){
 		// reset flag
 		gyroRange ^= 0x80;
@@ -206,6 +203,7 @@ void AccelGyro::setGyroRange(int16_t maxAbs){
 			gyroRange = newRange | 0x80;
 		}
 	}
+
 }
 
 void AccelGyro::read(){

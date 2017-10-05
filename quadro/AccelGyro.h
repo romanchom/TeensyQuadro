@@ -12,12 +12,10 @@ private:
 		CALIBRATION_SAMPLES = 100,
 		CALIBRATION_DELAY = 10,
 
-		// upper bound is sqrt of 2 times range of short
-		// lower bound is half of that
 		ACCEL_UPPER_RANGE = 23170,
 		ACCEL_LOWER_RANGE = 11585,
 		GYRO_UPPER_RANGE = 23170,
-		GYRO_LOWER_RANGE = 11585,
+		GYRO_LOWER_RANGE = 8096,
 	};
 
 	static constexpr float GYRO_CALIBRATION_TOLERANCE = 0.005f;
@@ -33,8 +31,8 @@ private:
 	void calibrate();
 	void readAccel();
 	void readGyro();
-	void setAccelRange(int16_t maxAbs);
-	void setGyroRange(int16_t maxAbs);
+	void setAccelRange(int32_t maxAbs);
+	void setGyroRange(int32_t maxAbs);
 	Vector<3> mGyroAvgDrift;
 	Vector<3> mAccelAvgOffset;
 public:

@@ -1,6 +1,7 @@
 #include <Yaps.h>
 #include <Yanrf.h>
 #include <cmath>
+#include "MonitorMsg.h"
 
 struct UserInput{
 	float inputX;
@@ -68,7 +69,7 @@ void loop() {
 	if(userInput.enable){
 		userInput.inputX = softDeadZone(pad.getStickFloat(pad.STICK_LEFT | pad.AXIS_X));
 		userInput.inputY = softDeadZone(-pad.getStickFloat(pad.STICK_LEFT | pad.AXIS_Y));
-		userInput.inputVertical = (1.0f - pad.getStickFloat(pad.STICK_RIGHT | pad.AXIS_Y)) * 0.35f;
+		userInput.inputVertical = softDeadZone(-pad.getStickFloat(pad.STICK_RIGHT | pad.AXIS_Y)) * 0.3f;
 	}
 
 	int param = -1;
@@ -79,16 +80,12 @@ void loop() {
 		if(pad.isPressed(pad.BUTTON_UP)) userInput.pid[param] *= std::exp(0.05f);
 		else if(pad.isPressed(pad.BUTTON_DOWN)) userInput.pid[param] *= std::exp(-0.05f);
 	}
+	int msgId = 0;
 
-
-	/*Serial.print("D: ");
-	Serial.println(userInput.pid[0], 7);
-
-	Serial.print("P: ");
-	Serial.println(userInput.pid[1], 7);
-
-	Serial.print("I: ");
-	Serial.println(userInput.pid[2], 7);*/
+	monitorPrint(msgId++, "D: ", userInput.pid[0]);
+	monitorPrint(msgId++, "P: ", userInput.pid[1]);
+	monitorPrint(msgId++, "I: ", userInput.pid[2]);
+	monitorPrint(msgId++, "Power: ", userInput.inputVertical);
 
 	radio.sendPacket(&userInput, sizeof(UserInput));
 
@@ -98,30 +95,22 @@ void loop() {
 	++totalSent;
 	if(ret & radio.UNSUCCESSFUL) {
 		++packetsLost;
-		Serial.print("Total: sent: ");
-		Serial.print(totalSent);
-		Serial.print(" received: ");
-		Serial.println(totalReceived);
 	}else{
 		++totalReceived;
 	}
 	while(int count = radio.available()){
 		float ack[4];
 		radio.read(ack, count);
-		for(int i = 0; i < 4; ++i){
-			Serial.print(ack[i], 7);
-			Serial.print('\t');
-		}
-		Serial.println();
+		monitorPrint(100, ack[0], ack[1], ack[2], ack[3]);
 	}
 
 	if(packetsSent == packetsPerTest){
 		float ratio = 100.0f * packetsLost / packetsPerTest;
 		packetsLost = 0;
 		packetsSent = 0;
-		Serial.print("Lost: ");
-		Serial.println(ratio);
+		monitorPrint(msgId, "Lost ", ratio);
 	}
+	msgId++;
 
 	uint32_t d = micros();
 	if(t > d){

@@ -57,7 +57,6 @@ public class MagnetoCal : MonoBehaviour {
 
     void Read()
     {
-        FileStream magnetoReadings = new FileStream("magneto.txt", FileMode.Create);
         StreamWriter text = new StreamWriter("magnetoText.txt");
         while (go)
         {
@@ -72,26 +71,31 @@ public class MagnetoCal : MonoBehaviour {
                 {
                     string line = port.ReadLine();
                     string[] words = line.Split('\t');
-                    float[] fs = new float[4];
-                    for (int i = 1; i < words.Length - 1; ++i)
+                    float[] fs = new float[50];
+                    int id;
+                    if (int.TryParse(words[0], out id))
                     {
-                        fs[i - 1] = float.Parse(words[i], System.Globalization.CultureInfo.InvariantCulture);
-                    }
-                    if (words[0] == "Mag")
-                    {
-                        text.Write(fs[0]);
-                        text.Write('\t');
-                        text.Write(fs[1]);
-                        text.Write('\t');
-                        text.Write(fs[2]);
-                        text.WriteLine();
-                        Vector3 p;
-                        p.x = fs[0];
-                        p.y = fs[2];
-                        p.z = fs[1];
-                        lock (points)
+                        for (int i = 1; i < words.Length; ++i)
                         {
-                            points.Add(p);
+                            float.TryParse(words[i], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture.NumberFormat, out fs[i - 1]);
+                        }
+
+                        if (id == 102)
+                        {
+                            text.Write(fs[0]);
+                            text.Write('\t');
+                            text.Write(fs[1]);
+                            text.Write('\t');
+                            text.Write(fs[2]);
+                            text.WriteLine();
+                            Vector3 p;
+                            p.x = fs[0];
+                            p.y = fs[2];
+                            p.z = fs[1];
+                            lock (points)
+                            {
+                                points.Add(p);
+                            }
                         }
                     }
                     

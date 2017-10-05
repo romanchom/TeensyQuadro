@@ -2,8 +2,6 @@
 #include "Sensor.h"
 
 
-#include "Debug.h"
-
 void Sensor::init(){
 	I2C::init();
 	magneto.init();
@@ -47,41 +45,28 @@ void Sensor::read(){
 	bool driftFix = false;
 
 	if(magneto.hasNewData()){
-		fixAxis = computeAxisOffset(magneto.magneto, mInitialMagneticVector, 0.02f);
+		fixAxis = computeAxisOffset(magneto.magneto, mInitialMagneticVector, 0.1f);
 		driftFix = true;
 		Quaternion attFix;
 		float angle = fixAxis.length();
-		attFix.fromAngleAxis(angle, fixAxis);
-		// multiplication on left side is in sensor frame of reference
-		attitude *= attFix;
+		if(angle > 0.00000000001f){
+			attFix.fromAngleAxis(angle, fixAxis);
+			// multiplication on left side is in sensor frame of reference
+			attitude *= attFix;
+		}
 	}
 	if(mIsOnGround){
 		Vector<3> up(0.0f, 0.0f, 1.0f);
-		fixAxis = computeAxisOffset(accelGyro.accel, up, 0.05f);
+		fixAxis = computeAxisOffset(accelGyro.accel, up, 0.2f);
 		driftFix = true;
 		Quaternion attFix;
 		float angle = fixAxis.length();
-		attFix.fromAngleAxis(angle, fixAxis);
-		// multiplication on left side is in sensor frame of reference
-		attitude *= attFix;
+		if(angle > 0.00000000001f){
+			attFix.fromAngleAxis(angle, fixAxis);
+			// multiplication on left side is in sensor frame of reference
+			attitude *= attFix;
+		}
 	}
-	/*if(driftFix){
-		Quaternion attFix;
-		float angle = fixAxis.length();
-		attFix.fromAngleAxis(angle, fixAxis);
-		// multiplication on left side is in sensor frame of reference
-		attitude *= attFix;
-	}*/
-
-
-	/*Serial.print("Mag\t");
-	magneto.magneto.print();
-	Serial.println();
-
-
-	Serial.print("Accel\t");
-	accelGyro.accel.print()
-	Serial.println();*/
 
 	attitude.normalize();
 }

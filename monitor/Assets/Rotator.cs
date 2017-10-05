@@ -1,31 +1,29 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using System.IO.Ports;
 using System.Threading;
 using System.Text;
 using System.IO;
 
 public class Rotator : MonoBehaviour {
+	string portName;
 	SerialPort port;
 	Thread thread;
-	Quaternion rot;
-    Vector3 mag;
-    Vector3 acc;
-	string portName;
 	Object l;
-	string msg = "";
-    string magStr = "";
-    string accStr = "";
-    string rollStr = "";
-    string motor1 = "";
-    string motor2 = "";
-    string angle = "";
 	bool go = true;
 
+    List<string> messages;
+    string msg;
+	Quaternion rot;
+    List<Vector3> vectorData;
+    Color32[] colors;
 
 	// Use this for initialization
 	void Start () {
 		l = new Object();
+        messages = new List<string>();
+        vectorData = new List<Vector3>();
+        colors = new Color32[] { Color.red, Color.yellow, Color.cyan, Color.green, Color.magenta };
 
 		thread = new Thread(Read);
 
@@ -36,8 +34,10 @@ public class Rotator : MonoBehaviour {
 	void Update () {
 		lock (l) {
 			transform.localRotation = rot;
-            Debug.DrawRay(Vector3.zero, rot * mag * 10, Color.red, 0.2f);
-            Debug.DrawRay(Vector3.zero, rot * acc * 10, Color.cyan, 0.2f);
+            for(int i = 0; i < vectorData.Count; ++i)
+            {
+                Debug.DrawRay(Vector3.zero, rot * vectorData[i] * 10, colors[i], 0.2f);
+            }
         }
 	}
 
@@ -60,52 +60,35 @@ public class Rotator : MonoBehaviour {
                     string line = port.ReadLine();
                     string[] words = line.Split('\t');
                     float[] fs = new float[50];
-
-                    for (int i = 1; i < words.Length - 1; ++i)
+                    int id;
+                    if (int.TryParse(words[0], out id))
                     {
-                        float.TryParse(words[i], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture.NumberFormat, out fs[i - 1]);
-                    }
-                    lock (l)
-                    {
-                        if (words[0] == "Quat")
+                        for (int i = 1; i < words.Length; ++i)
                         {
-                            rot.w = fs[0];
-                            rot.x = -fs[1];
-                            rot.y = -fs[3];
-                            rot.z = -fs[2];
+                            float.TryParse(words[i], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture.NumberFormat, out fs[i - 1]);
                         }
-                        else if (words[0] == "Mag")
+                        lock (l)
                         {
-                            mag.x = fs[0];
-                            mag.y = fs[2];
-                            mag.z = fs[1];
-                            magStr = line;
-                        }
-                        else if (words[0] == "Acc")
-                        {
-                            acc.x = fs[0];
-                            acc.y = fs[2];
-                            acc.z = fs[1];
-                            accStr = line;
-                        }else if(words[0] == "Roll")
-                        {
-                            rollStr = line;
-                        }
-                        else if(words[0] == "Motor1")
-                        {
-                            motor1 = line;
-                        }
-                        else if (words[0] == "Motor3")
-                        {
-                            motor2 = line;
-                        }
-                        else if (words[0] == "Angle")
-                        {
-                            angle = line;
-                        }
-                        else
-                        {
-                            msg = line;
+                            while (messages.Count <= id)
+                            {
+                                messages.Add("");
+                            }
+                            messages[id] = line;
+                            if (id == 100)
+                            {
+                                rot.w = fs[0];
+                                rot.x = -fs[1];
+                                rot.y = -fs[3];
+                                rot.z = -fs[2];
+                            }
+                            if(id > 100 && id < 106)
+                            {
+                                while(vectorData.Count <= id - 101)
+                                {
+                                    vectorData.Add(new Vector3());
+                                }
+                                vectorData[id - 101] = new Vector3(fs[0], fs[2], fs[1]);
+                            }
                         }
                     }
                 }
@@ -126,12 +109,11 @@ public class Rotator : MonoBehaviour {
 	void OnGUI() {
         StringBuilder str = new StringBuilder();
         str.AppendLine(msg);
-        str.AppendLine(accStr);
-        str.AppendLine(magStr);
-        str.AppendLine(rollStr);
-        str.AppendLine(motor1);
-        str.AppendLine(motor2);
-        str.AppendLine(angle);
+        foreach (var m in messages)
+        {
+            if(!string.IsNullOrEmpty(m)) str.AppendLine(m);
+        }
+
         GUI.TextArea(new Rect(0, 0, 500, 500), str.ToString());
 	}
 }

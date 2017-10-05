@@ -86,6 +86,7 @@ void Quaternion::integrateAngularRate(const Vector<3> & a){
 	v *= 0.5f;
 #if PRECISE_ANGULAR_RATE_INTEGRATION
 	float length = v.length();
+	if(length < 0.000000000001f) return;
 	v /= length;
 	float c = cos(length);
 	float s = sin(length);
